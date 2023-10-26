@@ -1,15 +1,17 @@
 # SMS to Telegram
 
+<p align="center">
+  <img src="https://github.com/mrsky1001/sms-to-telegram/assets/14128175/0bafa595-e445-4372-a698-59aa45d5a228" height="650">
+</p>
 
-![photo_2023-10-26_17-55-24.jpg](..%2F..%2F..%2F%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8%2Fphoto_2023-10-26_17-55-24.jpg)
 
 Android приложение на ReactNative, которое перехватывает SMS, фильтрует по ключевым словам и перенаправляет в телеграм-группу.
 
 ----
 # SMS to Telegram
 
-
-![photo_2023-10-26_17-55-24.jpg](..%2F..%2F..%2F%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8%2Fphoto_2023-10-26_17-55-24.jpg)
-
+<p align="center">
+  <img src="https://github.com/mrsky1001/sms-to-telegram/assets/14128175/0bafa595-e445-4372-a698-59aa45d5a228" height="650">
+</p>
 
 An Android application on ReactNative that intercepts SMS, filters by keywords and redirects to a telegram group.
