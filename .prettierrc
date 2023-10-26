@@ -1,0 +1,10 @@
+{
+  "tabWidth": 4,
+  "useTabs": false,
+  "singleQuote": true,
+  "trailingComma": "none",
+  "proseWrap": "preserve",
+  "printWidth": 140,
+  "semi": false,
+  "pluginSearchDirs": ["."],
+}
