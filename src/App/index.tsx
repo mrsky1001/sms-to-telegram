@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { Component, useEffect, useState } from 'react'
 import { Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 
 import BackgroundService from 'react-native-background-actions'
@@ -10,14 +10,17 @@ import logo from '../unnamed.jpg'
 import { requestReadSMSPermission, startReadSMS, stopReadSMS } from '@maniac-tech/react-native-expo-read-sms'
 import { checkPermissionsReadSMS, findPayment } from '../core/services/sms.services'
 import { config } from '../../config/config'
-import { showNotifyMessage } from '../core/services/app.services'
+import { getAllItemsLS, setAllItemsLS, showNotifyMessage } from '../core/services/app.services'
+// import AsyncStorage from '@react-native-async-storage/async-storage'
+import Task from '../core/models/Task'
+import { backgroundService } from '../core/services/background.services'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import Collapsible from 'react-native-collapsible'
+import Accordion from 'react-native-collapsible/Accordion'
 
 function App() {
-    const [keywords, setKeywords] = React.useState(config.keywords.join(' '))
     const [botApiKey, setBotApiKey] = React.useState(config.telegram.apiKey)
-    const [chatId, setChatId] = React.useState(config.telegram.chatId)
-    const [isValidParams, setIsValidParams] = React.useState(false)
+    const [tasks, setTasks] = React.useState([new Task(1, config.telegram.chatId, config.keywords)])
 
     const [hasPermissionReadSms, setHasPermissionReadSms] = useState(false)
     const [bgIsRunning, setBGIsRunning] = useState(BackgroundService.isRunning())
@@ -31,41 +34,26 @@ function App() {
                 showNotifyMessage(`Ошибка при выполнении функции checkPermissionsReadSMS [${error}]`)
             })
     }
+
     useEffect(() => {
-        AsyncStorage.getItem('botApiKey')
-            .then((result) => {
-                if (result !== null) {
-                    setBotApiKey(result)
+        getAllItemsLS('botApiKey', 'tasks').then((keysValues: any[]) => {
+            keysValues.forEach((obj) => {
+                if (obj.botApiKey) {
+                    setBotApiKey(obj.botApiKey)
                 }
-            })
-            .catch((error) => {
-                showNotifyMessage(`Ошибка при выполнении функции AsyncStorage.getItem('botApiKey') [${error}]`)
-            })
 
-        AsyncStorage.getItem('keywords')
-            .then((result) => {
-                if (result !== null) {
-                    setKeywords(result)
-                }
-            })
-            .catch((error) => {
-                showNotifyMessage(`Ошибка при выполнении функции AsyncStorage.getItem('keywords') [${error}]`)
-            })
+                console.log(obj)
+                if (obj.tasks) {
+                    const rawTasks = JSON.parse(obj.tasks)
+                    const savedTasks = rawTasks.map((task: Task) => new Task(task.id, task.chatId, task.keywords))
 
-        AsyncStorage.getItem('chatId')
-            .then((result) => {
-                if (result !== null) {
-                    setChatId(result)
+                    setTasks(savedTasks)
                 }
             })
-            .catch((error) => {
-                showNotifyMessage(`Ошибка при выполнении функции AsyncStorage.getItem('chatId') [${error}]`)
-            })
+        })
 
         requestReadSMSPermission().then(() => {
-            setTimeout(() => {
-                checkPermission()
-            }, 1000)
+            checkPermission()
         })
     }, [])
 
@@ -81,39 +69,14 @@ function App() {
         linkingURI: 'yourSchemeHere://chat/jane',
         parameters: {
             delay: 10000,
-            keywords: keywords.split(' '),
             apiKey: botApiKey,
-            chatId
+            tasks
         }
     })
 
-    const backgroundService = async (args?: { delay: number; keywords: string[]; chatId: string; apiKey: string }) => {
-        const { delay, keywords, chatId, apiKey } = args ?? {
-            delay: 2000,
-            keywords: config.keywords,
-            chatId: config.telegram.chatId,
-            apiKey: config.telegram.apiKey
-        }
-
-        let isRunning = false
-        stopReadSMS()
-
-        const sleep = (time: number) => new Promise((resolve) => setTimeout(() => resolve({}), time))
-
-        await new Promise(async () => {
-            for (let i = 0; BackgroundService.isRunning(); i++) {
-                if (!isRunning && hasPermissionReadSms) {
-                    isRunning = true
-                    startReadSMS(() => findPayment(keywords, chatId, apiKey)).catch((error: string) => {
-                        showNotifyMessage(`Ошибка при выполнении функции startReadSMS [${error}]`)
-                    })
-                }
-
-                await sleep(delay)
-            }
-        })
-    }
-
+    /**
+     * Запуск фонового процесса
+     */
     const startBGService = () => {
         BackgroundService.start(backgroundService, options())
             .then(() => {
@@ -125,6 +88,9 @@ function App() {
             })
     }
 
+    /**
+     * Остановка фонового процесса
+     */
     const stopBGService = () => {
         BackgroundService.stop()
             .then(() => {
@@ -136,6 +102,9 @@ function App() {
             })
     }
 
+    /**
+     * Перезапуск фонового процесса
+     */
     const restartBGService = () => {
         if (hasPermissionReadSms && !BackgroundService.isRunning()) {
             /**
@@ -161,25 +130,156 @@ function App() {
         }
     }
 
+    /**
+     * Функция сохранения параметров в хранилище
+     */
     const onSave = () => {
-        showNotifyMessage('Данные сохранены, перезапускаю службу...')
+        const keysValues = [
+            {
+                name: 'botApiKey',
+                value: botApiKey
+            },
+            {
+                name: 'tasks',
+                value: tasks
+            }
+        ]
 
-        AsyncStorage.setItem('botApiKey', botApiKey)
-        AsyncStorage.setItem('keywords', keywords)
-        AsyncStorage.setItem('chatId', chatId)
+        setAllItemsLS(keysValues).then(() => {
+            showNotifyMessage('Данные сохранены, перезапускаю службу...')
+        })
 
         restartBGService()
     }
 
+    /**
+     * Изменение поля chatId для выбранной задачи
+     * @param taskId
+     * @param chatId
+     */
+    const changeChatId = (taskId: number, chatId: string) => {
+        const task = tasks.find((d) => d.id === taskId)
+
+        if (task) {
+            task.chatId = chatId
+
+            setTasks([...tasks])
+        }
+    }
+
+    /**
+     * Изменение поля keywords для выбранной задачи
+     * @param taskId
+     * @param keywords
+     */
+    const changeKeywords = (taskId: number, keywords: string) => {
+        const task = tasks.find((d) => d.id === taskId)
+
+        if (task) {
+            task.keywords = keywords.split(' ')
+
+            setTasks([...tasks])
+        }
+    }
+
+    /**
+     * Создание и добавление новой задачи
+     */
+    const addTask = () => {
+        const newTask = new Task(tasks.length, config.telegram.chatId, config.keywords)
+        setTasks([...tasks, newTask])
+    }
+
+    /**
+     * Удаление выбранной задачи
+     * @param taskId
+     */
+    const deleteTask = (taskId: number) => {
+        setTasks([...tasks.filter((task) => task.id !== taskId)])
+    }
+
+    /**
+     * Получение классов стилей для текста кнопки в зависимости от поля isDisabled
+     * @param isDisabled
+     */
     const cssClassButtonText = (isDisabled: boolean) => {
         if (isDisabled) return ' text-gray-300  font-medium uppercase'
         else return ' text-green-600  font-medium uppercase'
     }
 
+    /**
+     * Получение классов стилей для кнопки в зависимости от поля isDisabled
+     * @param isDisabled
+     */
     const cssClassButton = (isDisabled: boolean) => {
         if (isDisabled) return 'h-14 border-2 border-gray-300 bg-white flex justify-around items-center rounded-xl'
         else return 'h-14 border-2 border-green-600 bg-white flex justify-around items-center rounded-xl'
     }
+
+    /**
+     * Компонент задачи
+     * @param task
+     * @constructor
+     */
+    const TaskForm = (task: Task) => {
+        return (
+            <View key={task.id} className={' pt-6'}>
+                <View className={' pt-6'}>
+                    <Text className={'text-black text-[24px] font-medium'}>Задача №{task.id}</Text>
+                    <View className={'p-4'}>
+                        <TouchableOpacity
+                            activeOpacity={0.1}
+                            className={cssClassButton(!hasPermissionReadSms)}
+                            onPress={() => {
+                                hasPermissionReadSms && deleteTask(task.id)
+                            }}
+                        >
+                            <Text className={cssClassButtonText(!hasPermissionReadSms) + ' font-small'}>Удалить задачу</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <Text className={'text-black text-[16px] font-light'}>ИД чата для отправки СМС:</Text>
+                    <View className={'p-4'}>
+                        <TextInput
+                            editable
+                            className={'text-black py-2 border-b-2 border-b-red-500'}
+                            onChangeText={(t) => changeChatId(task.id, t)}
+                            multiline
+                            value={task.chatId}
+                            placeholder="ИД чата для отправки СМС..."
+                            keyboardType="numeric"
+                        />
+                    </View>
+                </View>
+                <View className={' pt-6'}>
+                    <Text className={'text-black text-[16px] font-light'}>Ключевые слова фильтра:</Text>
+                    <View className={'p-4'}>
+                        <TextInput
+                            editable
+                            className={'text-black py-2 border-b-2 border-b-red-500'}
+                            onChangeText={(t) => changeKeywords(task.id, t)}
+                            multiline
+                            value={task.keywords.join(' ')}
+                            placeholder="Ключевые слова..."
+                            keyboardType="default"
+                        />
+                        <View className={'pt-4 pt-8'}>
+                            <TouchableOpacity
+                                activeOpacity={0.1}
+                                className={cssClassButton(!hasPermissionReadSms)}
+                                onPress={() => {
+                                    hasPermissionReadSms && onSave()
+                                }}
+                            >
+                                <Text className={cssClassButtonText(!hasPermissionReadSms)}>Сохранить</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </View>
+        )
+    }
+
+    const isCollapsed = false
 
     return (
         <SafeAreaView className={'px-4 bg-white h-full'}>
@@ -257,43 +357,33 @@ function App() {
                             />
                         </View>
                     </View>
-                    <View className={' pt-6'}>
-                        <Text className={'text-black text-[16px] font-light'}>4. ИД чата для отправки СМС:</Text>
-                        <View className={'p-4'}>
-                            <TextInput
-                                editable
-                                className={'text-black py-2 border-b-2 border-b-red-500'}
-                                onChangeText={(t) => setChatId(t)}
-                                multiline
-                                value={chatId}
-                                placeholder="ИД чата для отправки СМС..."
-                                keyboardType="numeric"
-                            />
-                        </View>
-                    </View>
-                    <View className={' pt-6'}>
-                        <Text className={'text-black text-[16px] font-light'}>5. Ключевые слова фильтра:</Text>
-                        <View className={'p-4'}>
-                            <TextInput
-                                editable
-                                className={'text-black py-2 border-b-2 border-b-red-500'}
-                                onChangeText={(t) => setKeywords(t)}
-                                multiline
-                                value={keywords}
-                                placeholder="Ключевые слова..."
-                                keyboardType="default"
-                            />
-                            <View className={'pt-4 pt-8'}>
-                                <TouchableOpacity
-                                    activeOpacity={0.1}
-                                    className={cssClassButton(!hasPermissionReadSms)}
-                                    onPress={() => {
-                                        hasPermissionReadSms && onSave()
-                                    }}
-                                >
-                                    <Text className={cssClassButtonText(!hasPermissionReadSms)}>Сохранить</Text>
-                                </TouchableOpacity>
-                            </View>
+                    {/*<Accordion*/}
+                    {/*    sections={SECTIONS}*/}
+                    {/*    activeSections={activeSections}*/}
+                    {/*    renderSectionTitle={_renderSectionTitle}*/}
+                    {/*    renderHeader={_renderHeader}*/}
+                    {/*    renderContent={_renderContent}*/}
+                    {/*    onChange={_updateSections}*/}
+                    {/*/>*/}
+
+                    {tasks.map((task) => {
+                        return (
+                            <Collapsible collapsed={isCollapsed}>
+                                <TaskForm id={task.id} chatId={task.chatId} keywords={task.keywords}></TaskForm>
+                            </Collapsible>
+                        )
+                    })}
+                    <View className={'p-4'}>
+                        <View className={'pt-4 pt-8'}>
+                            <TouchableOpacity
+                                activeOpacity={0.1}
+                                className={cssClassButton(!hasPermissionReadSms)}
+                                onPress={() => {
+                                    hasPermissionReadSms && addTask()
+                                }}
+                            >
+                                <Text className={cssClassButtonText(!hasPermissionReadSms)}>Добавить задачу</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                     <View className={'pt-4 pt-8 flex items-center justify-center'}>

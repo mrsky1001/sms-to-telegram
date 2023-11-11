@@ -6,7 +6,7 @@ import { postTelegramBot } from './bot.services'
 import SmsAndroid from 'react-native-get-sms-android'
 
 import { PermissionsAndroid } from 'react-native'
-import {showNotifyMessage} from "./app.services";
+import { showNotifyMessage } from './app.services'
 
 type TSMS = {
     _id: number
@@ -63,9 +63,7 @@ export const checkPermissionsReadSMS = async (): Promise<boolean> => {
 
 let lastMessage = ''
 
-export const findPayment = (keywords: string[], chatId: string, apiKey:string) => {
-
-
+export const findPayment = (keywords: string[], chatId: string, apiKey: string) => {
     const filter = {
         maxCount: 10
     }
