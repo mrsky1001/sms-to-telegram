@@ -1,26 +1,56 @@
-import React, { useEffect, useState } from 'react'
-import { Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import React, { useState } from 'react'
+import { SafeAreaView, ScrollView, Text, View } from 'react-native'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import logo from '../../unnamed.jpg'
-import { config } from '../../../config/config'
+import addIcon from '../../resoruces/add.png'
+
 import Task from '../../core/models/Task'
-import { TasksForm } from '../TasksForm/TasksForm'
-import { cssClassButton, cssClassButtonText } from '../../core/lib/css.settings'
+import { TaskForm } from '../TaskForm/TaskForm'
 import SettingsForm from '../SettingsForm/SettingsForm'
+import Header from '../Header/Header'
+import Button from '../Button/Button'
+import { getAllItemsLS, setAllItemsLS, showNotifyMessage } from '../../core/services/app.services'
 
 export default function App() {
-    const [tasks, setTasks] = React.useState([new Task(1, config.telegram.chatId, config.keywords)])
+    const [tasks, setTasks] = React.useState([new Task(1, '', [])])
 
     const [hasPermissionReadSms, setHasPermissionReadSms] = useState(false)
+
+    /**
+     * Функция сохранения параметров в хранилище
+     */
+    const onSave = () => {
+        console.log('onSave')
+        console.log('tasks', tasks)
+        const keysValues = [
+            {
+                name: 'tasks',
+                value: tasks
+            }
+        ]
+
+        // todo сохранять все параметры иначе затирает
+        setAllItemsLS(keysValues).then(() => {
+            showNotifyMessage('Данные сохранены!')
+        })
+
+        getAllItemsLS('botApiKey', 'tasks').then((keysValues: any[]) => {
+            keysValues.forEach((obj) => {
+                console.log('useEffect')
+                console.log(obj)
+            })
+        })
+    }
 
     /**
      * Создание и добавление новой задачи
      */
     const addTask = () => {
-        const newTask = new Task(tasks.length, config.telegram.chatId, config.keywords)
+        const newTask = new Task(tasks.length + 1, '', [])
         setTasks([...tasks, newTask])
+
+        onSave()
     }
 
     /**
@@ -29,12 +59,14 @@ export default function App() {
      * @param chatId
      */
     const changeChatId = (taskId: number, chatId: string) => {
+        console.log('changeChatId')
         const task = tasks.find((d) => d.id === taskId)
 
         if (task) {
             task.chatId = chatId
 
-            setTasks([...tasks])
+            onSave()
+            // setTasks([...tasks])
         }
     }
 
@@ -48,8 +80,7 @@ export default function App() {
 
         if (task) {
             task.keywords = keywords.split(' ')
-
-            setTasks([...tasks])
+            onSave()
         }
     }
 
@@ -59,41 +90,40 @@ export default function App() {
      */
     const deleteTask = (taskId: number) => {
         setTasks([...tasks.filter((task) => task.id !== taskId)])
+        onSave()
     }
-
-    const isCollapsed = false
 
     return (
         <SafeAreaView className={'px-4 bg-white h-full'}>
             <ScrollView>
-                <View className={'flex flex-row items-center justify-start h-20 border-b-red-500  border-b-2 '}>
-                    <Image className={'w-10 h-10'} source={logo}></Image>
-                    <Text className={'pl-6 text-black text-2xl font-light'}>{'SMS to Telegram'}</Text>
-                </View>
+                <Header></Header>
                 <View className={'pt-5'}>
-                    <SettingsForm
-                        tasks={tasks}
-                        setTasks={setTasks}
-                        hasPermissionReadSms={hasPermissionReadSms}
-                        setHasPermissionReadSms={setHasPermissionReadSms}
-                    ></SettingsForm>
-                    {tasks.map((task) => {
-                        return <TasksForm task={task}></TasksForm>
-                    })}
-                    <View className={'p-4'}>
-                        <View className={'pt-4 pt-8'}>
-                            <TouchableOpacity
-                                activeOpacity={0.1}
-                                className={cssClassButton(!hasPermissionReadSms)}
-                                onPress={() => {
-                                    hasPermissionReadSms && addTask()
-                                }}
-                            >
-                                <Text className={cssClassButtonText(!hasPermissionReadSms)}>Добавить задачу</Text>
-                            </TouchableOpacity>
+                    <View className={' border-b border-b-gray-300'}>
+                        <SettingsForm
+                            tasks={tasks}
+                            setTasks={setTasks}
+                            hasPermissionReadSms={hasPermissionReadSms}
+                            setHasPermissionReadSms={setHasPermissionReadSms}
+                        ></SettingsForm>
+                        <View className={'flex flex-row justify-between'}>
+                            <Text className={'pt-5 pb-3 text-gray-400'}>Задачи</Text>
                         </View>
                     </View>
-                    <View className={'pt-4 pt-8 flex items-center justify-center'}>
+                    {tasks.map((task) => {
+                        return (
+                            <TaskForm
+                                key={task.id}
+                                task={task}
+                                changeChatId={changeChatId}
+                                changeKeywords={changeKeywords}
+                                deleteTask={deleteTask}
+                            ></TaskForm>
+                        )
+                    })}
+                    <View className={'p-4'}>
+                        <Button label={'Создать задачу'} icon={addIcon} onPress={addTask} disabled={!hasPermissionReadSms} />
+                    </View>
+                    <View className={'py-8 flex items-center justify-center'}>
                         <Text className={'text-gray-300 text-[10px]'}>Development by mrsky1001.work@gmail.com / @mrsky1001</Text>
                     </View>
                 </View>

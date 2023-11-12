@@ -6,5 +6,5 @@
   "proseWrap": "preserve",
   "printWidth": 140,
   "semi": false,
-  "pluginSearchDirs": ["."],
+  "pluginSearchDirs": ["."]
 }

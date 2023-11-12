@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Image, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Text, View } from 'react-native'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -9,9 +9,9 @@ import BackgroundService from 'react-native-background-actions'
 import { checkPermissionsReadSMS } from '../../core/services/sms.services'
 import { getAllItemsLS, setAllItemsLS, showNotifyMessage } from '../../core/services/app.services'
 import { backgroundService } from '../../core/services/background.services'
-import { cssClassButton, cssClassButtonText } from '../../core/lib/css.settings'
-import { config } from '../../../config/config'
 import AccordionHeader from '../AccordionHeader/AccordionHeader'
+import Switch from '../Switch/Switch'
+import TextInput from '../TextInput/TextInput'
 
 export default function SettingsForm(props: {
     tasks: Task[]
@@ -25,7 +25,7 @@ export default function SettingsForm(props: {
     const setHasPermissionReadSms = props.setHasPermissionReadSms
 
     const [bgIsRunning, setBGIsRunning] = useState(BackgroundService.isRunning())
-    const [botApiKey, setBotApiKey] = React.useState(config.telegram.apiKey)
+    const [botApiKey, setBotApiKey] = React.useState('')
 
     const checkPermission = () => {
         checkPermissionsReadSMS()
@@ -110,35 +110,36 @@ export default function SettingsForm(props: {
         }
     }
 
+    const onChangeBotApi = (newBotAPi: string) => {
+        setBotApiKey(newBotAPi)
+        onSave()
+    }
+
     /**
      * Функция сохранения параметров в хранилище
      */
     const onSave = () => {
+        console.log('onSave')
         const keysValues = [
             {
                 name: 'botApiKey',
                 value: botApiKey
-            },
-            {
-                name: 'tasks',
-                value: tasks
             }
         ]
 
         setAllItemsLS(keysValues).then(() => {
-            showNotifyMessage('Данные сохранены, перезапускаю службу...')
+            showNotifyMessage('Данные сохранены!')
         })
-
-        restartBGService()
     }
 
     useEffect(() => {
         getAllItemsLS('botApiKey', 'tasks').then((keysValues: any[]) => {
             keysValues.forEach((obj) => {
-                if (obj.botApiKey) {
+                if (obj.botApiKey.length) {
                     setBotApiKey(obj.botApiKey)
                 }
 
+                console.log('useEffect')
                 console.log(obj)
                 if (obj.tasks) {
                     const rawTasks = JSON.parse(obj.tasks)
@@ -156,80 +157,47 @@ export default function SettingsForm(props: {
 
     const [isCollapsed, setIsCollapsed] = React.useState(true)
 
-    const toggleTask = () => setIsCollapsed(!isCollapsed)
+    const toggle = () => setIsCollapsed(!isCollapsed)
 
     return (
-        <View className={'block max-w p-6 bg-white border border-gray-200 rounded-lg shadow '}>
-            <AccordionHeader title={'Параметры'} isCollapsed={isCollapsed} toggle={toggleTask} />
+        <View className={' block max-w px-4 pt-3 pb-5 bg-white border border-gray-200 rounded-lg shadow '}>
+            <AccordionHeader title={'Параметры'} isCollapsed={isCollapsed} toggle={toggle} />
             <View className={isCollapsed ? 'hidden' : ''}>
-                <View className={'p-4 pt-6'}>
-                    <Text className={'text-black text-[16px] font-light'}>
-                        1. Статус доступа к СМС:
-                        <Text style={[{ color: hasPermissionReadSms ? 'green' : 'red' }]}>
-                            {hasPermissionReadSms ? ' Разрешён' : ' Запрещён'}{' '}
-                        </Text>
-                    </Text>
-                    <View className={'pt-4'}>
-                        <TouchableOpacity
-                            activeOpacity={0.8}
-                            className={cssClassButton(hasPermissionReadSms)}
-                            onPress={() => {
-                                !hasPermissionReadSms &&
-                                    requestReadSMSPermission().then(() => {
-                                        setTimeout(() => {
-                                            checkPermission()
-                                        }, 1000)
-                                    })
-                            }}
-                        >
-                            <Text className={cssClassButtonText(hasPermissionReadSms)}>Разрешить доступ к СМС</Text>
-                        </TouchableOpacity>
-                    </View>
+                <View className={'pt-6 flex flex-row justify-between align-middle'}>
+                    <Text className={' text-black text-[14px] font-light'}>Статус доступа к СМС</Text>
+                    <Switch
+                        onTouch={() => {
+                            !hasPermissionReadSms &&
+                                requestReadSMSPermission().then(() => {
+                                    setTimeout(() => {
+                                        checkPermission()
+                                    }, 1000)
+                                })
+                        }}
+                        value={hasPermissionReadSms}
+                    />
                 </View>
-                <View className={'p-4 pt-6'}>
-                    <Text className={'text-black text-[16px] font-light'}>
-                        2. Статус службы отслеживания:
-                        <Text style={[{ color: bgIsRunning ? 'green' : 'red' }]}>{bgIsRunning ? ' Работает' : ' Остановлена'} </Text>
-                    </Text>
-                    <View className={'pt-4 rounded-2xl'}>
-                        {bgIsRunning ? (
-                            <TouchableOpacity
-                                activeOpacity={0.8}
-                                className={cssClassButton(false) + ' border-red-600'}
-                                onPress={() => {
-                                    bgIsRunning && stopBGService()
-                                }}
-                            >
-                                <Text className={cssClassButtonText(false) + ' text-red-500'}>Остановить службу отслеживания</Text>
-                            </TouchableOpacity>
-                        ) : (
-                            <TouchableOpacity
-                                activeOpacity={0.8}
-                                className={cssClassButton(!hasPermissionReadSms || bgIsRunning)}
-                                onPress={() => {
-                                    hasPermissionReadSms && !bgIsRunning && restartBGService()
-                                }}
-                            >
-                                <Text className={cssClassButtonText(!hasPermissionReadSms || bgIsRunning)}>
-                                    Запустить службу отслеживания
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                    <View className={' pt-6'}>
-                        <Text className={'text-black text-[16px] font-light'}>3. API Key бота для отправки СМС:</Text>
-                        <View className={'p-4'}>
-                            <TextInput
-                                editable
-                                className={'text-black py-2 border-b-2 border-b-red-500'}
-                                onChangeText={(t) => setBotApiKey(t)}
-                                multiline
-                                value={botApiKey}
-                                placeholder="API Key бота для отправки СМС..."
-                                keyboardType="default"
-                            />
-                        </View>
-                    </View>
+                <View className={'pt-6 flex flex-row justify-between align-middle'}>
+                    <Text className={'text-black text-[14px] font-light'}>Статус службы отслеживания</Text>
+                    <Switch
+                        onTouch={() => {
+                            if (bgIsRunning) {
+                                stopBGService()
+                            } else {
+                                hasPermissionReadSms && !bgIsRunning && restartBGService()
+                            }
+                        }}
+                        value={bgIsRunning}
+                    />
+                </View>
+                <View className={' pt-6'}>
+                    <TextInput
+                        label={'API Key бота для отправки СМС'}
+                        // selection={{ start: 0, end: botApiKey.length }}
+                        value={botApiKey}
+                        placeholder="Введите API Key телеграм-бота..."
+                        onChangeText={(t) => onChangeBotApi(t)}
+                    />
                 </View>
             </View>
         </View>
