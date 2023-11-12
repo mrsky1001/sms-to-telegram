@@ -1,5 +1,5 @@
 import React from 'react'
-import { Image, Text, View } from 'react-native'
+import { Image, Text, TouchableOpacity } from 'react-native'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -14,11 +14,13 @@ export default function AccordionHeader(props: { title: string; isCollapsed: boo
     const toggle = props.toggle
 
     return (
-        <View className={'w-full flex flex-row justify-between'}>
-            <Text onPress={toggle} className={' text-black text-[24px] font-medium'}>
-                {title}
-            </Text>
+        <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={toggle}
+            className={'border-gray-300 w-full flex flex-row justify-between ' + (isCollapsed ? '' : ' border-b pb-4 ')}
+        >
+            <Text className={'text-gray-800 text-[20px] font-medium'}>{title}</Text>
             <Image className={'w-6 h-6'} source={isCollapsed ? downChevron : upChevron}></Image>
-        </View>
+        </TouchableOpacity>
     )
 }

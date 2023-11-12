@@ -1,4 +1,3 @@
-import { config } from '../../../config/config'
 import { addMinutesToDate } from '../lib/date.lib'
 import { postTelegramBot } from './bot.services'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment

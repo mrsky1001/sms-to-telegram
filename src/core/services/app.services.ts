@@ -16,7 +16,7 @@ export async function getAllItemsLS(...names: string[]): Promise<any[]> {
             await AsyncStorage.getItem(`__${config.app.name}_${name}`)
                 .then((result) => {
                     if (result !== null) {
-                        keysValues.push({ [name]: result })
+                        keysValues.push({ [name]: JSON.parse(result) })
                     }
 
                     if (idx === names.length - 1) {
@@ -33,6 +33,8 @@ export async function getAllItemsLS(...names: string[]): Promise<any[]> {
 
 export async function setAllItemsLS(keysValues: { name: string; value: any }[]) {
     keysValues.forEach((obj) => {
-        AsyncStorage.setItem(`__${config.app.name}_${obj.name}`, JSON.stringify(obj.value))
+        if (obj.value) {
+            AsyncStorage.setItem(`__${config.app.name}_${obj.name}`, JSON.stringify(obj.value))
+        }
     })
 }

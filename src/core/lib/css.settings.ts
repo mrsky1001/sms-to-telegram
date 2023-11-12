@@ -3,8 +3,8 @@
  * @param isDisabled
  */
 export function cssClassButtonText(isDisabled: boolean) {
-    if (isDisabled) return ' text-gray-300  font-medium uppercase'
-    else return ' text-green-600  font-medium uppercase'
+    if (isDisabled) return ' text-gray-300 text-[12px] font-medium uppercase'
+    else return ' text-white text-[12px] font-medium uppercase'
 }
 
 /**
@@ -12,6 +12,6 @@ export function cssClassButtonText(isDisabled: boolean) {
  * @param isDisabled
  */
 export function cssClassButton(isDisabled: boolean) {
-    if (isDisabled) return 'h-14 border-2 border-gray-300 bg-white flex justify-around items-center rounded-xl'
-    else return 'h-14 border-2 border-green-600 bg-white flex justify-around items-center rounded-xl'
+    if (isDisabled) return 'min-w-[40%] h-10 bg-white flex justify-around items-center rounded-xl'
+    else return 'min-w-[40%] h-10 bg-blue-500 flex justify-around items-center rounded-xl shadow'
 }
