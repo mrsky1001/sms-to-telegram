@@ -3,8 +3,7 @@
 import { AppRegistry } from 'react-native'
 import { RNAndroidNotificationListenerHeadlessJsName } from 'react-native-android-notification-listener'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import App from './src/App'
-import { config } from './config/config'
+import App from './src/components/App'
 
 /**
  * Обратите внимание, что этот метод ДОЛЖЕН возвращать обещание.
@@ -34,10 +33,6 @@ const headlessNotificationListener = async ({ notification }: any) => {
      */
 
     if (notification) {
-        /**
-         * Здесь вы могли бы сохранять уведомления во внешнем API.
-         * Я использую AsyncStorage здесь в качестве примера.
-         */
         await AsyncStorage.setItem('@prelastNotification', JSON.parse((await AsyncStorage.getItem('@lastNotification')) ?? ''))
         await AsyncStorage.setItem('@lastNotification', notification)
     }
