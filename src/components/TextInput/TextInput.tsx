@@ -9,14 +9,12 @@ export default function SwitchManual(props: {
     selection?: { start: number; end: number }
     onChangeText: (value: string) => void
 }) {
-    console.log(props.value)
     const [selfValue, setValue] = useState(props.value)
 
     useEffect(() => {
-        console.log('effect props.value', props.value)
-        console.log('effect value', selfValue)
         setValue(props.value)
     }, [props.value])
+
     const className = props.className ?? ''
     const selection = props.selection
     const label = props.label

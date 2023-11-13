@@ -1,6 +1,5 @@
 import { Platform, ToastAndroid } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { config } from '../../../config/config'
 
 export function showNotifyMessage(msg: string) {
     if (Platform.OS === 'android') {
@@ -8,33 +7,20 @@ export function showNotifyMessage(msg: string) {
     }
 }
 
-export async function getAllItemsLS(...names: string[]): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-        const keysValues: any[] = []
+export async function getAllItemsLS(...keys: string[]): Promise<any> {
+    const results = await AsyncStorage.multiGet(keys)
+    const obj: any = {}
 
-        names.forEach(async (name, idx) => {
-            await AsyncStorage.getItem(`__${config.app.name}_${name}`)
-                .then((result) => {
-                    if (result !== null) {
-                        keysValues.push({ [name]: JSON.parse(result) })
-                    }
-
-                    if (idx === names.length - 1) {
-                        resolve(keysValues)
-                    }
-                })
-                .catch((error) => {
-                    showNotifyMessage(`Ошибка при выполнении функции AsyncStorage.getItem('botApiKey') [${error}]`)
-                    reject(error)
-                })
-        })
-    })
-}
-
-export async function setAllItemsLS(keysValues: { name: string; value: any }[]) {
-    keysValues.forEach((obj) => {
-        if (obj.value) {
-            AsyncStorage.setItem(`__${config.app.name}_${obj.name}`, JSON.stringify(obj.value))
+    results.forEach((keyValue) => {
+        if (keyValue[1] != null) {
+            obj[keyValue[0]] = JSON.parse(keyValue[1])
         }
     })
+
+    return obj
+}
+
+export async function setAllItemsLS(objects: { name: string; value: any }[]) {
+    const keysValues: [string, string][] = objects.map((obj) => [obj.name, JSON.stringify(obj.value)])
+    await AsyncStorage.multiSet(keysValues)
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { SafeAreaView, ScrollView, Text, View } from 'react-native'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -14,15 +14,15 @@ import { getAllItemsLS, setAllItemsLS, showNotifyMessage } from '../../core/serv
 
 export default function App() {
     const [tasks, setTasks] = React.useState([new Task(1, '', [])])
+    const [isExistChanges, setIsExistChanges] = useState(false)
 
+    const [resetHandler, setResetHandler] = useState({ f: () => null })
     const [hasPermissionReadSms, setHasPermissionReadSms] = useState(false)
 
     /**
      * Функция сохранения параметров в хранилище
      */
     const onSave = () => {
-        console.log('onSave')
-        console.log('tasks', tasks)
         const keysValues = [
             {
                 name: 'tasks',
@@ -30,16 +30,10 @@ export default function App() {
             }
         ]
 
-        // todo сохранять все параметры иначе затирает
         setAllItemsLS(keysValues).then(() => {
+            setIsExistChanges(false)
             showNotifyMessage('Данные сохранены!')
-        })
-
-        getAllItemsLS('botApiKey', 'tasks').then((keysValues: any[]) => {
-            keysValues.forEach((obj) => {
-                console.log('useEffect')
-                console.log(obj)
-            })
+            resetHandler.f()
         })
     }
 
@@ -50,7 +44,7 @@ export default function App() {
         const newTask = new Task(tasks.length + 1, '', [])
         setTasks([...tasks, newTask])
 
-        onSave()
+        setIsExistChanges(true)
     }
 
     /**
@@ -59,14 +53,12 @@ export default function App() {
      * @param chatId
      */
     const changeChatId = (taskId: number, chatId: string) => {
-        console.log('changeChatId')
         const task = tasks.find((d) => d.id === taskId)
 
         if (task) {
             task.chatId = chatId
 
-            onSave()
-            // setTasks([...tasks])
+            setIsExistChanges(true)
         }
     }
 
@@ -80,7 +72,7 @@ export default function App() {
 
         if (task) {
             task.keywords = keywords.split(' ')
-            onSave()
+            setIsExistChanges(true)
         }
     }
 
@@ -90,8 +82,22 @@ export default function App() {
      */
     const deleteTask = (taskId: number) => {
         setTasks([...tasks.filter((task) => task.id !== taskId)])
-        onSave()
+        setIsExistChanges(true)
     }
+
+    useEffect(() => {
+        getAllItemsLS('tasks').then((obj: any) => {
+            if (obj.tasks.length) {
+                setTasks(obj.tasks)
+            }
+        })
+    }, [])
+
+    useEffect(() => {
+        if (isExistChanges) {
+            onSave()
+        }
+    }, [isExistChanges])
 
     return (
         <SafeAreaView className={'px-4 bg-white h-full'}>
@@ -104,6 +110,7 @@ export default function App() {
                             setTasks={setTasks}
                             hasPermissionReadSms={hasPermissionReadSms}
                             setHasPermissionReadSms={setHasPermissionReadSms}
+                            setResetHandler={setResetHandler}
                         ></SettingsForm>
                         <View className={'flex flex-row justify-between'}>
                             <Text className={'pt-5 pb-3 text-gray-400'}>Задачи</Text>
