@@ -59,7 +59,7 @@ export const checkPermissionsReadSMS = async (): Promise<boolean> => {
     })
 }
 
-let lastMessage = ''
+const lastMessages: any = {}
 
 export const findPayment = (keywords: string[], chatId: string, apiKey: string) => {
     const filter = {
@@ -68,14 +68,12 @@ export const findPayment = (keywords: string[], chatId: string, apiKey: string) 
 
     const paymentHandler = (count: number, data: string): void => {
         const smsList: TSMS[] = JSON.parse(data)
-        console.log(smsList)
 
         const paymentList = smsList.filter((sms) => {
             return !!keywords.find((t) => sms.body.toLowerCase().includes(t.toLowerCase()))
         })
 
-        console.log(paymentList)
-        if (paymentList.length) {
+        if (paymentList?.length) {
             const lastPayment = paymentList[0]
 
             const paymentDate = new Date(Number(lastPayment.date))
@@ -89,12 +87,10 @@ export const findPayment = (keywords: string[], chatId: string, apiKey: string) 
                     body: lastPayment.body
                 }
 
-                // console.log(smsMetaData)
-
                 const text = `Источник: ${smsMetaData.address}. Содержание: ${smsMetaData.body}. Дата: ${smsMetaData.date}`
 
-                if (text !== lastMessage) {
-                    lastMessage = text
+                if (text !== lastMessages[chatId]) {
+                    lastMessages[chatId] = text
 
                     postTelegramBot(apiKey, chatId, text).catch((error) => {
                         showNotifyMessage(`Ошибка при выполнении функции postTelegramBot [${error}]`)
