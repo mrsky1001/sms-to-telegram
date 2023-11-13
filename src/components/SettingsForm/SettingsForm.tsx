@@ -60,18 +60,25 @@ export default function SettingsForm(props: {
      * Запуск фонового процесса
      * @param isShowMessage
      */
-    const startBGService = (isShowMessage = false) => {
+    const startBGService = (isShowMessage = true) => {
+        console.log(
+            String(botApiKey)?.length > 5,
+            tasks?.length,
+            String(tasks[0]?.chatId)?.length > 5,
+            tasks[0]?.keywords?.length > 0,
+            String(tasks[0]?.keywords[0]).length > 0
+        )
         if (
-            botApiKey?.length > 5 &&
+            String(botApiKey)?.length > 5 &&
             tasks?.length &&
-            tasks[0]?.chatId?.length > 5 &&
+            String(tasks[0]?.chatId)?.length > 5 &&
             tasks[0]?.keywords?.length > 0 &&
-            tasks[0]?.keywords[0].length > 0
+            String(tasks[0]?.keywords[0]).length > 0
         ) {
             BackgroundService.start(backgroundService, options())
                 .then(() => {
                     setBGIsRunning(true)
-                    showNotifyMessage('Служба успешно запущена!')
+                    isShowMessage && showNotifyMessage('Служба успешно запущена!')
                 })
                 .catch((error) => {
                     showNotifyMessage(`Ошибка! Служба не запущена! [${error}]`)
@@ -84,11 +91,11 @@ export default function SettingsForm(props: {
     /**
      * Остановка фонового процесса
      */
-    const stopBGService = () => {
+    const stopBGService = (isShowMessage = true) => {
         BackgroundService.stop()
             .then(() => {
                 setBGIsRunning(false)
-                showNotifyMessage('Служба успешно остановлена!')
+                isShowMessage && showNotifyMessage('Служба успешно остановлена!')
             })
             .catch((error) => {
                 showNotifyMessage(`Ошибка! Служба не остановлена! [${error}]`)
@@ -98,27 +105,25 @@ export default function SettingsForm(props: {
     /**
      * Перезапуск фонового процесса
      */
-    const restartBGService = () => {
+    const restartBGService = (isShowMessage = false) => {
         if (hasPermissionReadSms && !BackgroundService.isRunning()) {
             /**
              * Запуск фонового процесса
              */
-            startBGService()
+            startBGService(false)
 
             setTimeout(() => {
-                stopBGService()
+                stopBGService(false)
 
                 setTimeout(() => {
-                    startBGService()
+                    startBGService(isShowMessage)
                 }, 500)
             }, 500)
         } else {
-            setTimeout(() => {
-                stopBGService()
+            stopBGService(false)
 
-                setTimeout(() => {
-                    startBGService()
-                }, 500)
+            setTimeout(() => {
+                startBGService(isShowMessage)
             }, 500)
         }
     }
@@ -194,7 +199,7 @@ export default function SettingsForm(props: {
                             if (bgIsRunning) {
                                 stopBGService()
                             } else {
-                                hasPermissionReadSms && !bgIsRunning && restartBGService()
+                                hasPermissionReadSms && !bgIsRunning && restartBGService(true)
                             }
                         }}
                         value={bgIsRunning}

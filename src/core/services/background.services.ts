@@ -47,7 +47,9 @@ export async function backgroundService(args?: { delay: number; tasks: Task[]; a
 
                 startReadSMS(() => {
                     tasks.map((task) => {
-                        findPayment(task.keywords, task.chatId, apiKey)
+                        if (String(apiKey).length && String(task.chatId).length && task.keywords.length) {
+                            findPayment(task.keywords, task.chatId, apiKey)
+                        }
                     })
                 }).catch((error: string) => {
                     showNotifyMessage(`Ошибка при выполнении функции startReadSMS [${error}]`)

@@ -20,7 +20,9 @@ export default function SwitchManual(props: {
     const label = props.label
     const placeholder = props.placeholder
     const onChangeText = (t: string) => {
-        props.onChangeText(t)
+        if (t !== props.value) {
+            props.onChangeText(t)
+        }
     }
 
     return (
