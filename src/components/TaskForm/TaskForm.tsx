@@ -25,38 +25,42 @@ export function TaskForm(props: {
     const deleteTask = props.deleteTask
 
     const TaskForm = (task: Task) => {
-        return (
-            <View key={task.id} className={' pt-6'}>
-                <View className={'py-4'}>
-                    <TextInput
-                        label={'ИД чата для отправки СМС'}
-                        value={task.chatId}
-                        placeholder="Введите ИД телеграм-чата..."
-                        // selection={{ start: 0, end: task.chatId?.length }}
-                        onChangeText={(t) => changeChatId(t)}
-                    />
-                </View>
-                <View className={'py-4'}>
-                    <TextInput
-                        label={'Ключевые слова фильтра'}
-                        placeholder="Введите ключевые слова..."
-                        value={task.keywords.join(' ')}
-                        // selection={{ start: 0, end: task.keywords?.join(' ').length }}
-                        onChangeText={(t) => changeKeywords(t)}
-                    />
-                    <View className={'pt-4 flex flex-row justify-end'}>
-                        <Button
-                            label={'Удалить'}
-                            icon={trashIcon}
-                            onPress={() => {
-                                deleteTask(task.id)
-                            }}
-                            disabled={false}
+        if (task) {
+            return (
+                <View key={task.id} className={' pt-6'}>
+                    <View className={'py-4'}>
+                        <TextInput
+                            label={'ИД чата для отправки СМС'}
+                            value={task.chatId}
+                            placeholder="Введите ИД телеграм-чата..."
+                            // selection={{ start: 0, end: task.chatId?.length }}
+                            onChangeText={(t) => changeChatId(t)}
                         />
                     </View>
+                    <View className={'py-4'}>
+                        <TextInput
+                            label={'Ключевые слова фильтра'}
+                            placeholder="Введите ключевые слова..."
+                            value={task.keywords.length ? task.keywords.join(' ') : undefined}
+                            // selection={{ start: 0, end: task.keywords?.join(' ').length }}
+                            onChangeText={(t) => changeKeywords(t)}
+                        />
+                        <View className={'pt-4 flex flex-row justify-end'}>
+                            <Button
+                                label={'Удалить'}
+                                icon={trashIcon}
+                                onPress={() => {
+                                    deleteTask(task.id)
+                                }}
+                                disabled={false}
+                            />
+                        </View>
+                    </View>
                 </View>
-            </View>
-        )
+            )
+        } else {
+            return null
+        }
     }
 
     const [isCollapsed, setIsCollapsed] = React.useState(true)

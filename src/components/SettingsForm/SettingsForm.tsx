@@ -18,13 +18,15 @@ export default function SettingsForm(props: {
     setTasks: (tasks: Task[]) => void
     hasPermissionReadSms: boolean
     setHasPermissionReadSms: (is: boolean) => void
+    setResetHandler: (a: { f: () => void }) => void
 }) {
     const tasks = props.tasks
-    const setTasks = props.setTasks
+    const setResetHandler = (a: { f: () => void }) => props.setResetHandler(a)
     const hasPermissionReadSms = props.hasPermissionReadSms
-    const setHasPermissionReadSms = props.setHasPermissionReadSms
+    const setHasPermissionReadSms = (t: boolean) => props.setHasPermissionReadSms(t)
 
     const [bgIsRunning, setBGIsRunning] = useState(BackgroundService.isRunning())
+    const [isExistChanges, setIsExistChanges] = useState(false)
     const [botApiKey, setBotApiKey] = React.useState('')
 
     const checkPermission = () => {
@@ -56,16 +58,28 @@ export default function SettingsForm(props: {
 
     /**
      * Запуск фонового процесса
+     * @param isShowMessage
      */
-    const startBGService = () => {
-        BackgroundService.start(backgroundService, options())
-            .then(() => {
-                setBGIsRunning(true)
-                showNotifyMessage('Служба успешно запущена!')
-            })
-            .catch((error) => {
-                showNotifyMessage(`Ошибка! Служба не запущена! [${error}]`)
-            })
+    const startBGService = (isShowMessage = false) => {
+        console.log(botApiKey?.length > 5, tasks?.length, tasks[0]?.chatId?.length > 5, tasks[0]?.keywords?.length > 0, tasks[0].keywords)
+        if (
+            botApiKey?.length > 5 &&
+            tasks?.length &&
+            tasks[0]?.chatId?.length > 5 &&
+            tasks[0]?.keywords?.length > 0 &&
+            tasks[0]?.keywords[0].length > 0
+        ) {
+            BackgroundService.start(backgroundService, options())
+                .then(() => {
+                    setBGIsRunning(true)
+                    showNotifyMessage('Служба успешно запущена!')
+                })
+                .catch((error) => {
+                    showNotifyMessage(`Ошибка! Служба не запущена! [${error}]`)
+                })
+        } else {
+            isShowMessage && showNotifyMessage(`Не все поля заполнены для запуска службы!`)
+        }
     }
 
     /**
@@ -112,14 +126,19 @@ export default function SettingsForm(props: {
 
     const onChangeBotApi = (newBotAPi: string) => {
         setBotApiKey(newBotAPi)
-        onSave()
+        setIsExistChanges(true)
     }
+
+    useEffect(() => {
+        if (isExistChanges) {
+            onSave()
+        }
+    }, [isExistChanges])
 
     /**
      * Функция сохранения параметров в хранилище
      */
     const onSave = () => {
-        console.log('onSave')
         const keysValues = [
             {
                 name: 'botApiKey',
@@ -128,26 +147,18 @@ export default function SettingsForm(props: {
         ]
 
         setAllItemsLS(keysValues).then(() => {
+            setIsExistChanges(false)
             showNotifyMessage('Данные сохранены!')
         })
     }
 
     useEffect(() => {
-        getAllItemsLS('botApiKey', 'tasks').then((keysValues: any[]) => {
-            keysValues.forEach((obj) => {
-                if (obj.botApiKey.length) {
-                    setBotApiKey(obj.botApiKey)
-                }
+        setResetHandler({ f: () => restartBGService() })
 
-                console.log('useEffect')
-                console.log(obj)
-                if (obj.tasks) {
-                    const rawTasks = JSON.parse(obj.tasks)
-                    const savedTasks = rawTasks.map((task: Task) => new Task(task.id, task.chatId, task.keywords))
-
-                    setTasks(savedTasks)
-                }
-            })
+        getAllItemsLS('botApiKey').then((obj: any) => {
+            if (obj.botApiKey.length) {
+                setBotApiKey(obj.botApiKey)
+            }
         })
 
         requestReadSMSPermission().then(() => {
