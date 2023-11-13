@@ -61,7 +61,6 @@ export default function SettingsForm(props: {
      * @param isShowMessage
      */
     const startBGService = (isShowMessage = false) => {
-        console.log(botApiKey?.length > 5, tasks?.length, tasks[0]?.chatId?.length > 5, tasks[0]?.keywords?.length > 0, tasks[0].keywords)
         if (
             botApiKey?.length > 5 &&
             tasks?.length &&
@@ -156,7 +155,7 @@ export default function SettingsForm(props: {
         setResetHandler({ f: () => restartBGService() })
 
         getAllItemsLS('botApiKey').then((obj: any) => {
-            if (obj.botApiKey.length) {
+            if (obj.botApiKey?.length) {
                 setBotApiKey(obj.botApiKey)
             }
         })

@@ -46,7 +46,6 @@ export async function backgroundService(args?: { delay: number; tasks: Task[]; a
                 isRunning = true
 
                 startReadSMS(() => {
-                    console.log(tasks)
                     tasks.map((task) => {
                         findPayment(task.keywords, task.chatId, apiKey)
                     })

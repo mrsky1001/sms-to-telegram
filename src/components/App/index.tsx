@@ -10,7 +10,8 @@ import { TaskForm } from '../TaskForm/TaskForm'
 import SettingsForm from '../SettingsForm/SettingsForm'
 import Header from '../Header/Header'
 import Button from '../Button/Button'
-import { getAllItemsLS, setAllItemsLS, showNotifyMessage } from '../../core/services/app.services'
+import { getAllItemsLS, logs, setAllItemsLS, showNotifyMessage } from '../../core/services/app.services'
+import { LogForm } from '../LogForm/LogForm'
 
 export default function App() {
     const [tasks, setTasks] = React.useState([new Task(1, '', [])])
@@ -19,6 +20,7 @@ export default function App() {
     const [resetHandler, setResetHandler] = useState({ f: () => null })
     const [hasPermissionReadSms, setHasPermissionReadSms] = useState(false)
 
+    // const [logs, setLogs] = useState([])
     /**
      * Функция сохранения параметров в хранилище
      */
@@ -41,7 +43,7 @@ export default function App() {
      * Создание и добавление новой задачи
      */
     const addTask = () => {
-        const newTask = new Task(tasks.length + 1, '', [])
+        const newTask = new Task(tasks?.length + 1, '', [])
         setTasks([...tasks, newTask])
 
         setIsExistChanges(true)
@@ -86,9 +88,9 @@ export default function App() {
     }
 
     useEffect(() => {
-        getAllItemsLS('tasks').then((obj: any) => {
-            if (obj.tasks.length) {
-                setTasks(obj.tasks)
+        getAllItemsLS('tasks').then((obj: { tasks: Task[] }) => {
+            if (obj.tasks?.length) {
+                setTasks(obj.tasks.map((t) => new Task(t.id, t.chatId, t.keywords, t.name)))
             }
         })
     }, [])
@@ -130,6 +132,9 @@ export default function App() {
                     <View className={'p-4'}>
                         <Button label={'Создать задачу'} icon={addIcon} onPress={addTask} disabled={!hasPermissionReadSms} />
                     </View>
+
+                    <LogForm />
+
                     <View className={'py-8 flex items-center justify-center'}>
                         <Text className={'text-gray-300 text-[10px]'}>Development by mrsky1001.work@gmail.com / @mrsky1001</Text>
                     </View>
