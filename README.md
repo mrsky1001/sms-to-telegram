@@ -1,7 +1,7 @@
 # SMS to Telegram
 
 <p align="center">
-  <img src="https://github.com/mrsky1001/sms-to-telegram/assets/14128175/0bafa595-e445-4372-a698-59aa45d5a228" height="650">
+  https://github.com/mrsky1001/sms-to-telegram/assets/14128175/05289443-d5f5-4fc0-97e7-5f86612cb951" height="650">
 </p>
 
 
@@ -11,7 +11,7 @@ Android приложение на ReactNative, которое перехваты
 # SMS to Telegram
 
 <p align="center">
-  <img src="https://github.com/mrsky1001/sms-to-telegram/assets/14128175/0bafa595-e445-4372-a698-59aa45d5a228" height="650">
+  <img src="https://github.com/mrsky1001/sms-to-telegram/assets/14128175/05289443-d5f5-4fc0-97e7-5f86612cb951" height="650">
 </p>
 
 An Android application on ReactNative that intercepts SMS, filters by keywords and redirects to a telegram group.
